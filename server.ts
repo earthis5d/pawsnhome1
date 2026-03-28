@@ -3,6 +3,10 @@ import { createServer as createViteServer } from "vite";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as fs from "node:fs";
+import * as dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,9 +25,34 @@ async function startServer() {
     console.log('Starting in DEVELOPMENT mode with Vite middleware');
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom", // Use custom to handle HTML transformation manually
     });
     app.use(vite.middlewares);
+
+    // Handle SPA fallback in development
+    app.use('*', async (req, res, next) => {
+      const url = req.originalUrl;
+      try {
+        // 1. Read index.html
+        let template = fs.readFileSync(
+          path.resolve(__dirname, 'index.html'),
+          'utf-8'
+        );
+
+        // 2. Apply Vite HTML transforms. This injects the Vite HMR client, and
+        //    also applies HTML transforms from Vite plugins, e.g. global preambles
+        //    from @vitejs/plugin-react
+        template = await vite.transformIndexHtml(url, template);
+
+        // 3. Send the rendered HTML back.
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e: any) {
+        // If an error is caught, let Vite fix the stack trace so it maps back
+        // to your actual source code.
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
   } else {
     // Serve static files from the dist directory in production
     const distPath = path.resolve(__dirname, 'dist');
