@@ -1326,8 +1326,13 @@ export default function App() {
   const [currentShelter, setCurrentShelter] = useState<Shelter | null>(null);
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('pet_favorites');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('pet_favorites');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Failed to parse favorites from localStorage:', error);
+      return [];
+    }
   });
   const loadingRef = React.useRef(true);
 
