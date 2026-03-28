@@ -139,14 +139,20 @@ export const getCurrentUser = async () => {
 };
 
 export const signUp = async (email: string, password: string, shelterData: Omit<Shelter, 'id' | 'email'>) => {
-  console.log('Supabase Auth SignUp starting...');
+  console.log('Supabase Auth SignUp starting for:', email);
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+    },
   });
 
   if (authError) {
     console.error('Supabase Auth Error:', authError);
+    if (authError.message === 'User already registered') {
+      throw new Error('此電子郵件已註冊，請直接登入或使用其他信箱。');
+    }
     throw authError;
   }
 
@@ -177,23 +183,32 @@ export const signUp = async (email: string, password: string, shelterData: Omit<
 };
 
 export const uploadPetPhoto = async (file: File, shelterId: string): Promise<string> => {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${Math.random()}.${fileExt}`;
-  const filePath = `${shelterId}/${fileName}`;
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `${shelterId}/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from('pet-photos')
-    .upload(filePath, file);
+    console.log('Attempting to upload photo to path:', filePath);
 
-  if (uploadError) {
-    throw uploadError;
+    const { error: uploadError } = await supabase.storage
+      .from('pet-photos')
+      .upload(filePath, file);
+
+    if (uploadError) {
+      console.error('Supabase Storage Upload Error:', uploadError);
+      throw uploadError;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('pet-photos')
+      .getPublicUrl(filePath);
+
+    console.log('Photo uploaded successfully. Public URL:', publicUrl);
+    return publicUrl;
+  } catch (error) {
+    console.error('Error in uploadPetPhoto:', error);
+    throw error;
   }
-
-  const { data: { publicUrl } } = supabase.storage
-    .from('pet-photos')
-    .getPublicUrl(filePath);
-
-  return publicUrl;
 };
 
 export const addPet = async (pet: Omit<Pet, 'id' | 'createdAt'>) => {

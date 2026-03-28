@@ -4,13 +4,12 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Heart, MapPin, MessageCircle, LogIn, Plus, LogOut, ChevronRight, Filter, X, Menu, Mail, Sparkles, Send, Bot } from 'lucide-react';
+import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
+import { Search, Heart, MapPin, MessageCircle, LogIn, Plus, LogOut, ChevronRight, Filter, X, Menu, Mail, Camera, Edit2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MOCK_PETS, MOCK_SHELTERS } from './mockData';
 import { Pet, Shelter, PetType } from './types';
 import { cn } from './lib/utils';
-import { generatePetDescription, getPetMatchRecommendations } from './aiService';
 import { 
   fetchPets, 
   fetchShelters, 
@@ -27,7 +26,6 @@ import {
   uploadPetPhoto
 } from './supabaseService';
 import { supabase } from './supabase';
-import { Camera, Trash2, Edit2 } from 'lucide-react';
 
 // --- Components ---
 
@@ -190,96 +188,6 @@ const PetCard: React.FC<PetCardProps> = ({ pet, shelter, isFavorite = false, onT
 
 // --- Pages ---
 
-const AIMatchmaker = ({ pets }: { pets: Pet[] }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [preferences, setPreferences] = useState('');
-  const [recommendation, setRecommendation] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleGetMatch = async () => {
-    if (!preferences.trim()) return;
-    setLoading(true);
-    try {
-      const result = await getPetMatchRecommendations(preferences, pets);
-      setRecommendation(result);
-    } catch (error) {
-      setRecommendation('抱歉，目前無法提供推薦。');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed bottom-8 right-8 z-40">
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="absolute bottom-20 right-0 w-80 md:w-96 bg-white rounded-[32px] shadow-2xl border border-purple-100 overflow-hidden flex flex-col"
-          >
-            <div className="bg-primary p-6 text-white flex items-center space-x-3">
-              <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
-                <Bot className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-serif font-bold">AI 智能領養顧問</h3>
-                <p className="text-[10px] opacity-80 uppercase tracking-widest">幫您找到最適合的毛孩</p>
-              </div>
-              <button onClick={() => setIsOpen(false)} className="ml-auto p-1 hover:bg-white/10 rounded-full">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <div className="p-6 max-h-[400px] overflow-y-auto space-y-4">
-              {recommendation ? (
-                <div className="bg-purple-50 p-4 rounded-2xl text-sm text-zinc-700 leading-relaxed whitespace-pre-wrap">
-                  {recommendation}
-                </div>
-              ) : (
-                <p className="text-sm text-zinc-500 italic">
-                  告訴我您的生活環境（例如：住公寓、有小孩、工作忙碌），我將為您推薦最合適的毛孩。
-                </p>
-              )}
-            </div>
-
-            <div className="p-4 bg-zinc-50 border-t border-zinc-100 flex items-center space-x-2">
-              <input 
-                type="text" 
-                placeholder="輸入您的偏好..." 
-                className="flex-1 bg-white border-zinc-200 rounded-xl px-4 py-2 text-sm focus:ring-primary focus:border-primary"
-                value={preferences}
-                onChange={(e) => setPreferences(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleGetMatch()}
-              />
-              <button 
-                onClick={handleGetMatch}
-                disabled={loading}
-                className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center hover:bg-primary-hover transition-colors disabled:opacity-50 shadow-lg shadow-primary/20"
-              >
-                {loading ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-16 h-16 bg-primary text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-110 transition-transform group relative"
-      >
-        <Sparkles className="w-8 h-8 group-hover:animate-pulse" />
-        {!isOpen && (
-          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full animate-bounce">
-            AI 配對
-          </div>
-        )}
-      </button>
-    </div>
-  );
-};
-
 const HomePage = ({ pets, shelters, favorites, onToggleFavorite }: { pets: Pet[]; shelters: Shelter[]; favorites: string[]; onToggleFavorite: (id: string) => void }) => {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<PetType | 'all'>('all');
@@ -400,8 +308,6 @@ const HomePage = ({ pets, shelters, favorites, onToggleFavorite }: { pets: Pet[]
           </div>
         )}
       </section>
-
-      <AIMatchmaker pets={pets} />
     </div>
   );
 };
@@ -711,6 +617,13 @@ const PetDetailPage = ({ pets, shelters, favorites, onToggleFavorite }: { pets: 
   );
 };
 
+const isStripeKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.startsWith('sb_publishable_');
+console.log(`[${new Date().toISOString()}] Supabase Config Check:`);
+console.log('- Key (full):', import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log('- Key starts with:', import.meta.env.VITE_SUPABASE_ANON_KEY?.substring(0, 15) + '...');
+console.log('- isStripeKey:', isStripeKey);
+console.log('- URL:', import.meta.env.VITE_SUPABASE_URL);
+
 const ShelterLoginPage = ({ onLogin }: { onLogin: (s: Shelter) => void }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -720,33 +633,50 @@ const ShelterLoginPage = ({ onLogin }: { onLogin: (s: Shelter) => void }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isStripeKey) {
+      console.warn('Supabase key check failed (Stripe key detected), but proceeding anyway...');
+      setStatus({ message: '警告：偵測到可能的 Supabase 金鑰設定錯誤。如果登入失敗，請檢查環境變數。', type: 'info' });
+    }
     setLoading(true);
     setStatus(null);
     console.log('Login attempt for:', email);
     try {
-      await signIn(email, password);
-      const user = await getCurrentUser();
-      console.log('Current user:', user);
+      console.log('Calling signIn...');
+      const signInData = await signIn(email, password);
+      console.log('SignIn successful:', signInData);
+      
+      const user = signInData.user;
+      console.log('User from signIn:', user);
+      
       if (user) {
+        console.log('Fetching shelter data for user ID:', user.id);
         const shelter = await getShelterById(user.id);
-        console.log('Shelter data:', shelter);
+        console.log('Shelter data fetched:', shelter);
+        
         if (shelter) {
+          console.log('Login successful, setting shelter and navigating...');
           onLogin(shelter);
           navigate('/dashboard');
         } else {
-          console.warn('User found but no shelter record in database.');
-          setStatus({ message: '找不到對應的收容所資料，請確認您的帳號是否已註冊。', type: 'error' });
+          console.warn('User found in Auth but no shelter record in database.');
+          setStatus({ message: '找不到對應的收容所資料，請確認您的帳號是否已註冊，或聯繫管理員。', type: 'error' });
         }
       } else {
-        console.warn('SignIn succeeded but getCurrentUser returned null.');
+        console.warn('SignIn succeeded but user is null.');
         setStatus({ message: '登入失敗，請確認您的帳號已驗證。', type: 'error' });
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Detailed Login error:', error);
       let friendlyMessage = error.message || '請檢查電子郵件與密碼。';
-      if (error.message?.includes('rate limit exceeded')) {
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        friendlyMessage = '電子郵件或密碼錯誤，請重新輸入或先註冊帳號。';
+      } else if (error.message?.includes('Email not confirmed')) {
+        friendlyMessage = '您的電子郵件尚未驗證，請檢查您的收件匣。';
+      } else if (error.message?.includes('rate limit exceeded')) {
         friendlyMessage = '登入請求過於頻繁，請稍候幾分鐘再試。';
       }
+      
       setStatus({ message: '登入失敗：' + friendlyMessage, type: 'error' });
     } finally {
       setLoading(false);
@@ -793,6 +723,27 @@ const ShelterLoginPage = ({ onLogin }: { onLogin: (s: Shelter) => void }) => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+        <div className="flex flex-col space-y-4">
+          <button 
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { data, error } = await supabase.from('shelters').select('count', { count: 'exact', head: true });
+                if (error) throw error;
+                setStatus({ message: `連線成功！資料庫中有 ${data?.length || 0} 個收容所。`, type: 'success' });
+              } catch (error: any) {
+                console.error('Connection test failed:', error);
+                setStatus({ message: '連線失敗：' + (error.message || '請檢查您的網路或 Supabase 設定。'), type: 'error' });
+              } finally {
+                setLoading(false);
+              }
+            }}
+            className="text-xs text-primary hover:underline"
+          >
+            測試資料庫連線
+          </button>
+          
           <button 
             type="submit"
             disabled={loading}
@@ -803,6 +754,18 @@ const ShelterLoginPage = ({ onLogin }: { onLogin: (s: Shelter) => void }) => {
             ) : (
               <span>登入管理後台</span>
             )}
+          </button>
+        </div>
+          
+          <button 
+            type="button"
+            onClick={() => {
+              onLogin(MOCK_SHELTERS[0]);
+              navigate('/dashboard');
+            }}
+            className="w-full bg-zinc-100 text-zinc-600 py-4 rounded-3xl font-bold hover:bg-zinc-200 transition-all flex items-center justify-center space-x-2"
+          >
+            <span>使用測試帳號登入 (Demo)</span>
           </button>
         </form>
         
@@ -830,6 +793,11 @@ const ShelterRegisterPage = ({ onRegister }: { onRegister: (s: Shelter) => void 
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleRegister triggered');
+    if (isStripeKey) {
+      console.warn('Supabase key check failed (Stripe key detected) in handleRegister, but proceeding anyway...');
+      setStatus({ message: '警告：偵測到可能的 Supabase 金鑰設定錯誤。如果註冊失敗，請檢查環境變數。', type: 'info' });
+    }
     setLoading(true);
     setStatus(null);
     console.log('Starting registration for:', formData.email);
@@ -995,7 +963,7 @@ const PetForm = ({
   onCancel: () => void; 
 }) => {
   const [loading, setLoading] = useState(false);
-  const [aiGenerating, setAiGenerating] = useState(false);
+  console.log('PetForm initialized with shelterId:', shelterId);
   const [formData, setFormData] = useState({
     name: pet?.name || '',
     type: pet?.type || 'dog' as PetType,
@@ -1008,32 +976,40 @@ const PetForm = ({
     status: pet?.status || 'available' as 'available' | 'adopted',
   });
 
-  const handleAiGenerateDescription = async () => {
-    if (!formData.name || !formData.breed) {
-      alert('請先填寫名字與品種，以便 AI 生成簡介。');
-      return;
-    }
-    setAiGenerating(true);
-    try {
-      const desc = await generatePetDescription(formData);
-      setFormData(prev => ({ ...prev, description: desc }));
-    } catch (error) {
-      alert('AI 生成失敗，請稍後再試。');
-    } finally {
-      setAiGenerating(false);
-    }
-  };
-
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Check if we are in Demo Mode (mock shelter ID)
+    if (shelterId.startsWith('shelter-')) {
+      console.log('Demo Mode detected, using mock upload');
+      setLoading(true);
+      try {
+        // Simulate upload delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const mockUrl = `https://picsum.photos/seed/${Math.random()}/800/800`;
+        setFormData(prev => ({ ...prev, images: [...prev.images, mockUrl] }));
+        return;
+      } finally {
+        setLoading(false);
+      }
+    }
 
     setLoading(true);
     try {
       const url = await uploadPetPhoto(file, shelterId);
       setFormData(prev => ({ ...prev, images: [...prev.images, url] }));
-    } catch (error) {
-      alert('照片上傳失敗');
+    } catch (error: any) {
+      console.error('Photo upload failed:', error);
+      let errorMessage = '照片上傳失敗';
+      if (error.message === 'The resource was not found' || error.message?.includes('bucket')) {
+        errorMessage = '上傳失敗：儲存空間 (Bucket) "pet-photos" 尚未建立。請在 Supabase 控制台建立此儲存空間並設為公開。';
+      } else if (error.status === 403 || error.message?.includes('403')) {
+        errorMessage = '上傳失敗：權限不足。請確保您已登入，且儲存空間已設定正確的 RLS 政策。';
+      } else if (error.message) {
+        errorMessage = `上傳失敗：${error.message}`;
+      }
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -1043,6 +1019,21 @@ const PetForm = ({
     e.preventDefault();
     setLoading(true);
     try {
+      // Check for Demo Mode (mock shelter ID)
+      if (shelterId.startsWith('shelter-')) {
+        console.log('Demo Mode: Simulating pet save');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const mockPet: Pet = {
+          ...formData,
+          id: pet?.id || `pet-${Math.random().toString(36).substring(2, 9)}`,
+          shelterId,
+          createdAt: pet?.createdAt || new Date().toISOString(),
+          status: formData.status as any // Ensure correct type
+        };
+        onSave(mockPet);
+        return;
+      }
+
       if (pet) {
         const updated = await updatePet(pet.id, formData);
         onSave(updated);
@@ -1050,8 +1041,15 @@ const PetForm = ({
         const added = await addPet({ ...formData, shelterId });
         onSave(added);
       }
-    } catch (error) {
-      alert('儲存失敗');
+    } catch (error: any) {
+      console.error('Failed to save pet:', error);
+      let errorMessage = '儲存失敗';
+      if (error.message?.includes('violates foreign key constraint')) {
+        errorMessage = '儲存失敗：收容所 ID 不存在。請確保您已正確登入。';
+      } else if (error.message) {
+        errorMessage = `儲存失敗：${error.message}`;
+      }
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -1095,6 +1093,7 @@ const PetForm = ({
               >
                 <option value="dog">狗狗</option>
                 <option value="cat">貓貓</option>
+                <option value="rabbit">兔子</option>
                 <option value="bird">鳥類</option>
                 <option value="other">其他</option>
               </select>
@@ -1136,22 +1135,7 @@ const PetForm = ({
             </div>
 
             <div className="md:col-span-2">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400">簡介</label>
-                <button 
-                  type="button"
-                  onClick={handleAiGenerateDescription}
-                  disabled={aiGenerating}
-                  className="flex items-center space-x-1 text-[10px] font-bold text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
-                >
-                  {aiGenerating ? (
-                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3 h-3" />
-                  )}
-                  <span>AI 智能生成</span>
-                </button>
-              </div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 mb-2">簡介</label>
               <textarea 
                 required
                 rows={4}
@@ -1321,6 +1305,7 @@ const ShelterDashboard = ({ shelter, pets, setPets }: { shelter: Shelter; pets: 
 // --- Main App ---
 
 export default function App() {
+  const navigate = useNavigate();
   const [pets, setPets] = useState<Pet[]>([]);
   const [shelters, setShelters] = useState<Shelter[]>([]);
   const [currentShelter, setCurrentShelter] = useState<Shelter | null>(null);
@@ -1436,11 +1421,17 @@ export default function App() {
   }, []);
 
   const handleLogout = async () => {
+    console.log('Logout initiated...');
     try {
       await signOut();
-      setCurrentShelter(null);
+      console.log('Supabase signOut successful');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout failed in Supabase:', error);
+    } finally {
+      setCurrentShelter(null);
+      console.log('Local shelter state cleared');
+      navigate('/');
+      console.log('Navigated to home page');
     }
   };
 
@@ -1456,52 +1447,50 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <div className="min-h-screen flex flex-col font-sans text-zinc-900 selection:bg-purple-200">
-        <Navbar 
-          shelter={currentShelter} 
-          onLogout={handleLogout} 
-          favoriteCount={favorites.length}
-        />
-        
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<HomePage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
-            <Route path="/favorites" element={<FavoritesPage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
-            <Route path="/pet/:id" element={<PetDetailPage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
-            <Route path="/login" element={<ShelterLoginPage onLogin={setCurrentShelter} />} />
-            <Route path="/register" element={<ShelterRegisterPage onRegister={setCurrentShelter} />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                currentShelter ? (
-                  <ShelterDashboard shelter={currentShelter} pets={pets} setPets={setPets} />
-                ) : (
-                  <ShelterLoginPage onLogin={setCurrentShelter} />
-                )
-              } 
-            />
-            <Route path="/shelter/:id" element={<ShelterProfilePage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
-          </Routes>
-        </main>
+    <div className="min-h-screen flex flex-col font-sans text-zinc-900 selection:bg-purple-200">
+      <Navbar 
+        shelter={currentShelter} 
+        onLogout={handleLogout} 
+        favoriteCount={favorites.length}
+      />
+      
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<HomePage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+          <Route path="/favorites" element={<FavoritesPage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+          <Route path="/pet/:id" element={<PetDetailPage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+          <Route path="/login" element={<ShelterLoginPage onLogin={setCurrentShelter} />} />
+          <Route path="/register" element={<ShelterRegisterPage onRegister={setCurrentShelter} />} />
+          <Route 
+            path="/dashboard" 
+            element={
+              currentShelter ? (
+                <ShelterDashboard shelter={currentShelter} pets={pets} setPets={setPets} />
+              ) : (
+                <ShelterLoginPage onLogin={setCurrentShelter} />
+              )
+            } 
+          />
+          <Route path="/shelter/:id" element={<ShelterProfilePage pets={pets} shelters={shelters} favorites={favorites} onToggleFavorite={toggleFavorite} />} />
+        </Routes>
+      </main>
 
-        <footer className="bg-zinc-900 text-zinc-400 py-12 px-4 border-t border-zinc-800">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
-                <Heart className="text-zinc-900 w-4 h-4 fill-current" />
-              </div>
-              <span className="text-lg font-serif font-bold text-white">寵物有家</span>
+      <footer className="bg-zinc-900 text-zinc-400 py-12 px-4 border-t border-zinc-800">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+              <Heart className="text-zinc-900 w-4 h-4 fill-current" />
             </div>
-            <div className="flex space-x-8 text-sm">
-              <Link to="/" className="hover:text-white transition-colors">尋找毛孩</Link>
-              <Link to="/login" className="hover:text-white transition-colors">收容所登入</Link>
-              <a href="#" className="hover:text-white transition-colors">隱私權政策</a>
-            </div>
-            <p className="text-xs">© 2026 寵物有家. 保留所有權利。</p>
+            <span className="text-lg font-serif font-bold text-white">寵物有家</span>
           </div>
-        </footer>
-      </div>
-    </Router>
+          <div className="flex space-x-8 text-sm">
+            <Link to="/" className="hover:text-white transition-colors">尋找毛孩</Link>
+            <Link to="/login" className="hover:text-white transition-colors">收容所登入</Link>
+            <a href="#" className="hover:text-white transition-colors">隱私權政策</a>
+          </div>
+          <p className="text-xs">© 2026 寵物有家. 保留所有權利。</p>
+        </div>
+      </footer>
+    </div>
   );
 }

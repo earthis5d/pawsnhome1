@@ -6,6 +6,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 console.log('Initializing Supabase client...');
 console.log('URL:', supabaseUrl ? 'Set' : 'Missing');
 console.log('Anon Key:', supabaseAnonKey ? 'Set' : 'Missing');
+console.log('Anon Key starts with:', supabaseAnonKey?.substring(0, 15) + '...');
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Supabase URL or Anon Key is missing. Please check your environment variables.');

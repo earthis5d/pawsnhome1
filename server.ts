@@ -15,6 +15,7 @@ console.log('Server starting...');
 console.log('Current directory:', process.cwd());
 console.log('__dirname:', __dirname);
 console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Supabase Key starts with (server):', process.env.VITE_SUPABASE_ANON_KEY?.substring(0, 15) + '...');
 
 async function startServer() {
   const app = express();
