@@ -1,0 +1,5 @@
+{
+  "name": "寵物有家",
+  "description": "一個免費的寵物領養平台，連結收容所與溫暖的家。具備寵物列表、收容所管理後台及 WhatsApp 直接聯繫功能。",
+  "requestFramePermissions": ["geolocation"]
+}

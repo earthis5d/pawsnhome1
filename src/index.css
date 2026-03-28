@@ -1,0 +1,20 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+@theme {
+  --font-sans: "Noto Sans TC", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Noto Serif TC", serif;
+  --color-primary: #7c3aed; /* purple-600 */
+  --color-primary-hover: #6d28d9; /* purple-700 */
+  --color-primary-light: #f5f3ff; /* purple-50 */
+}
+
+@layer base {
+  body {
+    @apply bg-[#fdfaff] text-zinc-900 antialiased;
+  }
+}
+
+.prose p {
+  @apply text-zinc-600 leading-relaxed;
+}
